@@ -1,36 +1,49 @@
+// db.js (ESM)
 import pg from "pg";
-import dotenv from "dotenv";
-dotenv.config();
+import { readFile } from "fs/promises";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const { Pool } = pg;
 
-// Normaliza postgres:// a postgresql:// si hace falta
-const fixedUrl = (process.env.DATABASE_URL || "")
-  .replace(/^postgres:\/\//, "postgresql://");
+// Resuelve ruta absoluta al schema.sql (raíz del proyecto)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const schemaPath = path.join(__dirname, "schema.sql");
+
+// Normaliza la URL de conexión y configura SSL solo si es externa
+let conn = process.env.DATABASE_URL || "";
+conn = conn.replace(/^postgres:\/\//, "postgresql://");
+const needsSSL = conn.includes("render.com") || conn.includes("sslmode=require");
 
 export const pool = new Pool({
-  connectionString: fixedUrl,
-  ssl: fixedUrl.includes("render.com") ? { rejectUnauthorized: false } : false,
+  connectionString: conn,
+  ssl: needsSSL ? { rejectUnauthorized: false } : false,
 });
 
 export async function initDb() {
-  // Crea tablas si no existen (según el enunciado)
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS clientes (
-      id SERIAL PRIMARY KEY,
-      nombre VARCHAR(100) NOT NULL,
-      email  VARCHAR(150) UNIQUE NOT NULL,
-      telefono VARCHAR(50) NOT NULL
-    );
+  if (!conn) {
+    console.error("[DB] DATABASE_URL no está definida. Configúrala en Render → Environment.");
+    throw new Error("DATABASE_URL missing");
+  }
 
-    CREATE TABLE IF NOT EXISTS ordenes (
-      id SERIAL PRIMARY KEY,
-      cliente_id INT NOT NULL REFERENCES clientes(id),
-      platillo_nombre VARCHAR(150) NOT NULL,
-      notes TEXT,
-      estado VARCHAR(20) NOT NULL DEFAULT 'pending',
-      creado TIMESTAMP NOT NULL DEFAULT NOW()
-    );
-  `);
-  console.log("[DB] Tablas listas");
+  // 1) Probar conexión
+  await pool.query("SELECT 1");
+  console.log("[DB] Conexión OK");
+
+  // 2) Ejecutar schema.sql (idempotente por tus CREATE TABLE IF NOT EXISTS)
+  try {
+    const sql = await readFile(schemaPath, "utf8");
+    // Opcional: filtra líneas CREATE DATABASE si no están comentadas
+    const cleaned = sql
+      .split("\n")
+      .filter(line => !/^--\s*CREATE DATABASE/i.test(line.trim()))
+      .join("\n");
+
+    await pool.query(cleaned);
+    console.log("[DB] schema.sql aplicado (o ya existía)");
+  } catch (e) {
+    console.error("[DB] No se pudo aplicar schema.sql:", e.message);
+    throw e;
+  }
 }
