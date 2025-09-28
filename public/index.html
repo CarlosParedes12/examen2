@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Restaurante - Órdenes</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <h1>Restaurante - Órdenes</h1>
+
+  <section class="card">
+    <h2>Registrar cliente</h2>
+    <form id="form-register">
+      <input id="reg-nombre" placeholder="Nombre" required />
+      <input id="reg-email" placeholder="Email" type="email" required />
+      <input id="reg-telefono" placeholder="Teléfono" required />
+      <button>Registrar</button>
+    </form>
+    <pre id="out-register"></pre>
+  </section>
+
+  <section class="card">
+    <h2>Login cliente</h2>
+    <form id="form-login">
+      <input id="login-email" placeholder="Email" type="email" required />
+      <input id="login-telefono" placeholder="Teléfono" required />
+      <button>Entrar</button>
+    </form>
+    <div>Cliente autenticado: <span id="cliente-actual">-</span></div>
+  </section>
+
+  <section class="card">
+    <h2>Nueva orden</h2>
+    <form id="form-orden">
+      <input id="orden-platillo" placeholder="Platillo" required />
+      <input id="orden-notes" placeholder="Notas (opcional)" />
+      <button>Crear orden</button>
+    </form>
+    <pre id="out-orden"></pre>
+  </section>
+
+  <section class="card">
+    <h2>Mis órdenes</h2>
+    <button id="btn-refresh">Refrescar</button>
+    <ul id="lista-ordenes"></ul>
+  </section>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: restaurante-ordenes
+    env: node
+    plan: free
+    buildCommand: "npm install"
+    startCommand: "npm start"
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+  - type: postgres
+    name: restaurante-ordenes-db
+    plan: free
